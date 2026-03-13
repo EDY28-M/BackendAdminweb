@@ -131,7 +131,7 @@ export declare class CatalogService {
         created_at: Date;
         updated_at: Date;
     }>;
-    create(createData: Prisma.catalog_itemsCreateInput): Promise<{
+    create(createData: Prisma.catalog_itemsUncheckedCreateInput): Promise<{
         id: string;
         store_id: string;
         category_id: string | null;
@@ -151,7 +151,7 @@ export declare class CatalogService {
         created_at: Date;
         updated_at: Date;
     }>;
-    createCategory(data: Prisma.catalog_categoriesCreateInput): Promise<{
+    createCategory(data: any): Promise<{
         id: string;
         store_id: string;
         parent_id: string | null;

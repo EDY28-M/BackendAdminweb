@@ -100,8 +100,17 @@ let StoresService = class StoresService {
         });
     }
     async createCategory(data) {
+        const code = data.name
+            .toUpperCase()
+            .replace(/[^A-Z0-9\s]/g, '')
+            .replace(/\s+/g, '_')
+            .substring(0, 50);
         return this.prisma.business_categories.create({
-            data
+            data: {
+                name: data.name,
+                code: code,
+                is_active: true
+            }
         });
     }
     async createMerchant(data) {

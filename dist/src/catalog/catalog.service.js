@@ -58,8 +58,18 @@ let CatalogService = class CatalogService {
         });
     }
     async createCategory(data) {
+        const slug = data.name
+            .toLowerCase()
+            .replace(/[^\w\s-]/g, '')
+            .replace(/[\s_]+/g, '-')
+            .replace(/^-+|-+$/g, '');
         return this.prisma.catalog_categories.create({
-            data
+            data: {
+                store_id: data.store_id,
+                name: data.name,
+                slug: slug,
+                is_active: true
+            }
         });
     }
 };

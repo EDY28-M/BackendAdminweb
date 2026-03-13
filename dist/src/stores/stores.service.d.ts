@@ -143,7 +143,7 @@ export declare class StoresService {
         created_at: Date;
         updated_at: Date;
     }>;
-    createCategory(data: Prisma.business_categoriesCreateInput): Promise<{
+    createCategory(data: any): Promise<{
         id: string;
         code: string;
         name: string;
