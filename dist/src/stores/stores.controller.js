@@ -31,6 +31,9 @@ let StoresController = class StoresController {
     getCategories() {
         return this.storesService.getCategories();
     }
+    updateMerchant(id, data) {
+        return this.storesService.updateMerchant(id, data);
+    }
     findOne(id) {
         return this.storesService.findOne(id);
     }
@@ -66,6 +69,14 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], StoresController.prototype, "getCategories", null);
+__decorate([
+    (0, common_1.Patch)('merchants/:id'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], StoresController.prototype, "updateMerchant", null);
 __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id')),

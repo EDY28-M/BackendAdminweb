@@ -23,6 +23,11 @@ export class StoresController {
     return this.storesService.getCategories();
   }
 
+  @Patch('merchants/:id')
+  updateMerchant(@Param('id') id: string, @Body() data: any) {
+    return this.storesService.updateMerchant(id, data);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.storesService.findOne(id);

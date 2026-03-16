@@ -7,7 +7,11 @@ export class UsersService {
 
   async findAll() {
     return this.prisma.users.findMany({
-      orderBy: { created_at: 'desc' }
+      include: {
+        user_roles: { include: { roles: true } },
+        merchant_profiles: { select: { id: true, business_name: true } },
+      },
+      orderBy: { created_at: 'desc' },
     });
   }
 

@@ -20,8 +20,10 @@ let OrdersService = class OrdersService {
     async findAll() {
         return this.prisma.orders.findMany({
             include: {
-                users_orders_customer_user_idTousers: true,
+                users_orders_customer_user_idTousers: { select: { first_name: true, last_name: true, email: true, phone_e164: true } },
+                users_orders_rider_user_idTousers: { select: { first_name: true, last_name: true } },
                 store_branches: true,
+                stores: { select: { name: true } },
             },
             orderBy: { created_at: 'desc' }
         });
@@ -31,8 +33,10 @@ let OrdersService = class OrdersService {
             where: { id },
             include: {
                 users_orders_customer_user_idTousers: true,
+                users_orders_rider_user_idTousers: true,
                 store_branches: true,
                 order_items: true,
+                stores: true,
             }
         });
         if (!order)
@@ -40,6 +44,20 @@ let OrdersService = class OrdersService {
         return order;
     }
     async update(id, updateData) {
+        const data = { ...updateData };
+        if (data.rider_user_id) {
+            const rider = await this.prisma.rider_profiles.findUnique({
+                where: { user_id: data.rider_user_id },
+            });
+            if (rider) {
+                await this.prisma.deliveries.updateMany({
+                    where: { order_id: id },
+                    data: { rider_profile_id: rider.id, assigned_at: new Date() },
+                });
+                updateData.status = 'rider_assigned';
+                updateData.rider_assigned_at = new Date();
+            }
+        }
         return this.prisma.orders.update({
             where: { id },
             data: updateData

@@ -18,24 +18,19 @@ export declare class OrdersController {
             created_at: Date;
             updated_at: Date;
         };
+        stores: {
+            name: string;
+        };
         users_orders_customer_user_idTousers: {
-            id: string;
             phone_e164: string | null;
             email: string | null;
-            password_hash: string | null;
-            auth_provider: import(".prisma/client").$Enums.auth_provider_type;
-            google_sub: string | null;
             first_name: string;
             last_name: string | null;
-            photo_url: string | null;
-            status: import(".prisma/client").$Enums.user_status_type;
-            is_phone_verified: boolean;
-            is_email_verified: boolean;
-            last_login_at: Date | null;
-            created_at: Date;
-            updated_at: Date;
-            deleted_at: Date | null;
         };
+        users_orders_rider_user_idTousers: {
+            first_name: string;
+            last_name: string | null;
+        } | null;
     } & {
         id: string;
         order_code: string;
@@ -87,6 +82,24 @@ export declare class OrdersController {
             created_at: Date;
             updated_at: Date;
         };
+        stores: {
+            id: string;
+            merchant_id: string;
+            business_category_id: string;
+            name: string;
+            slug: string;
+            description: string | null;
+            logo_url: string | null;
+            cover_image_url: string | null;
+            service_mode: import(".prisma/client").$Enums.service_mode_type;
+            catalog_mode: import(".prisma/client").$Enums.catalog_mode_type;
+            status: import(".prisma/client").$Enums.store_status_type;
+            avg_rating: Prisma.Decimal | null;
+            total_reviews: number;
+            min_order_amount: Prisma.Decimal | null;
+            created_at: Date;
+            updated_at: Date;
+        };
         order_items: {
             id: string;
             order_id: string;
@@ -122,6 +135,24 @@ export declare class OrdersController {
             updated_at: Date;
             deleted_at: Date | null;
         };
+        users_orders_rider_user_idTousers: {
+            id: string;
+            phone_e164: string | null;
+            email: string | null;
+            password_hash: string | null;
+            auth_provider: import(".prisma/client").$Enums.auth_provider_type;
+            google_sub: string | null;
+            first_name: string;
+            last_name: string | null;
+            photo_url: string | null;
+            status: import(".prisma/client").$Enums.user_status_type;
+            is_phone_verified: boolean;
+            is_email_verified: boolean;
+            last_login_at: Date | null;
+            created_at: Date;
+            updated_at: Date;
+            deleted_at: Date | null;
+        } | null;
     } & {
         id: string;
         order_code: string;

@@ -5,6 +5,13 @@ export declare class StoresService {
     constructor(prisma: PrismaService);
     findAll(): Promise<({
         merchant_profiles: {
+            users: {
+                phone_e164: string | null;
+                email: string | null;
+                first_name: string;
+                last_name: string | null;
+            };
+        } & {
             id: string;
             owner_user_id: string;
             business_name: string;
@@ -70,6 +77,13 @@ export declare class StoresService {
     }[]>;
     findOne(id: string): Promise<{
         merchant_profiles: {
+            users: {
+                phone_e164: string | null;
+                email: string | null;
+                first_name: string;
+                last_name: string | null;
+            };
+        } & {
             id: string;
             owner_user_id: string;
             business_name: string;
@@ -163,4 +177,24 @@ export declare class StoresService {
         created_at: Date;
         updated_at: Date;
     }>;
+    updateMerchant(id: string, data: any): Promise<({
+        users: {
+            phone_e164: string | null;
+            email: string | null;
+            first_name: string;
+            last_name: string | null;
+        };
+    } & {
+        id: string;
+        owner_user_id: string;
+        business_name: string;
+        legal_name: string | null;
+        tax_id: string | null;
+        billing_email: string | null;
+        phone_e164: string | null;
+        logo_url: string | null;
+        status: import(".prisma/client").$Enums.merchant_status_type;
+        created_at: Date;
+        updated_at: Date;
+    }) | null>;
 }

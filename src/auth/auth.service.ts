@@ -48,4 +48,43 @@ export class AuthService {
       }
     };
   }
+
+  async loginMerchant(loginDto: LoginDto) {
+    const user = await this.prisma.users.findUnique({
+      where: { email: loginDto.email },
+      include: {
+        user_roles: { include: { roles: true } },
+        merchant_profiles: { include: { stores: true } },
+      },
+    });
+
+    if (!user || user.status !== 'active') {
+      throw new UnauthorizedException('Credenciales inválidas o usuario inactivo');
+    }
+
+    const isMerchant = user.user_roles.some((ur: any) => ur.roles?.code === 'merchant');
+    if (!isMerchant || !user.merchant_profiles?.[0]) {
+      throw new UnauthorizedException('No tienes acceso al portal de comerciantes');
+    }
+
+    const isMatch = await bcrypt.compare(loginDto.password, user.password_hash || '');
+    if (!isMatch) {
+      throw new UnauthorizedException('Credenciales inválidas');
+    }
+
+    const merchant = user.merchant_profiles[0];
+    const payload = { sub: user.id, email: user.email, merchant_id: merchant.id, scope: 'merchant' };
+
+    return {
+      access_token: this.jwtService.sign(payload),
+      user: {
+        id: user.id,
+        email: user.email,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        merchant_id: merchant.id,
+        stores: merchant.stores,
+      },
+    };
+  }
 }

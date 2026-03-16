@@ -10,7 +10,7 @@ export class StoresService {
   async findAll() {
     return this.prisma.stores.findMany({
       include: {
-        merchant_profiles: true,
+        merchant_profiles: { include: { users: { select: { first_name: true, last_name: true, email: true, phone_e164: true } } } },
         business_categories: true,
       },
       orderBy: { created_at: 'desc' }
@@ -39,7 +39,7 @@ export class StoresService {
     const store = await this.prisma.stores.findUnique({
       where: { id },
       include: {
-        merchant_profiles: true,
+        merchant_profiles: { include: { users: { select: { first_name: true, last_name: true, email: true, phone_e164: true } } } },
         business_categories: true,
       }
     });
@@ -55,8 +55,40 @@ export class StoresService {
   }
 
   async create(createData: Prisma.storesUncheckedCreateInput) {
-    return this.prisma.stores.create({
-      data: createData
+    // Forzar status 'active' — toda tienda creada desde admin debe aparecer en la app
+    const storeData = { ...createData, status: 'active' as any };
+
+    return this.prisma.$transaction(async (tx) => {
+      const store = await tx.stores.create({ data: storeData });
+
+      // Crear una dirección genérica para el branch si no se provee
+      const address = await tx.addresses.create({
+        data: {
+          label: 'Principal',
+          country_code: 'PE',
+          region: 'Huánuco',
+          province: 'Leoncio Prado',
+          district: 'Rupa-Rupa',
+          city: 'Tingo María',
+          address_line1: 'Dirección principal de la tienda',
+          latitude: -9.2956,
+          longitude: -75.9986,
+        },
+      });
+
+      // Crear un branch activo para que la tienda aparezca en la app
+      await tx.store_branches.create({
+        data: {
+          store_id: store.id,
+          address_id: address.id,
+          name: `${store.name} - Principal`,
+          status: 'active',
+          accepts_orders: true,
+          avg_prep_time_minutes: 20,
+        },
+      });
+
+      return store;
     });
   }
 
@@ -145,5 +177,46 @@ export class StoresService {
       }
       throw error;
     }
+  }
+
+  async updateMerchant(id: string, data: any) {
+    const merchant = await this.prisma.merchant_profiles.findUnique({
+      where: { id },
+      include: { users: true },
+    });
+    if (!merchant) throw new NotFoundException('Dueño no encontrado');
+
+    const { first_name, last_name, email, phone, business_name, legal_name, tax_id, password } = data;
+    const userId = merchant.owner_user_id;
+
+    const userUpdate: any = {};
+    if (first_name !== undefined) userUpdate.first_name = first_name;
+    if (last_name !== undefined) userUpdate.last_name = last_name;
+    if (email !== undefined) userUpdate.email = email;
+    if (phone !== undefined) userUpdate.phone_e164 = phone || null;
+    if (password && password.trim()) {
+      userUpdate.password_hash = await bcrypt.hash(password, 10);
+    }
+
+    const merchantUpdate: any = {};
+    if (business_name !== undefined) merchantUpdate.business_name = business_name;
+    if (legal_name !== undefined) merchantUpdate.legal_name = legal_name;
+    if (tax_id !== undefined) merchantUpdate.tax_id = tax_id;
+    if (phone !== undefined) merchantUpdate.phone_e164 = phone || null;
+    if (email !== undefined) merchantUpdate.billing_email = email;
+
+    await this.prisma.$transaction(async (tx) => {
+      if (Object.keys(userUpdate).length) {
+        await tx.users.update({ where: { id: userId }, data: userUpdate });
+      }
+      if (Object.keys(merchantUpdate).length) {
+        await tx.merchant_profiles.update({ where: { id }, data: merchantUpdate });
+      }
+    });
+
+    return this.prisma.merchant_profiles.findUnique({
+      where: { id },
+      include: { users: { select: { first_name: true, last_name: true, email: true, phone_e164: true } } },
+    });
   }
 }

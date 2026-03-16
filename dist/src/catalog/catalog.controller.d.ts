@@ -4,16 +4,6 @@ export declare class CatalogController {
     private readonly catalogService;
     constructor(catalogService: CatalogService);
     findAll(): Promise<({
-        catalog_categories: {
-            id: string;
-            store_id: string;
-            parent_id: string | null;
-            name: string;
-            slug: string;
-            sort_order: number;
-            is_active: boolean;
-            created_at: Date;
-        } | null;
         stores: {
             id: string;
             merchant_id: string;
@@ -32,6 +22,16 @@ export declare class CatalogController {
             created_at: Date;
             updated_at: Date;
         };
+        catalog_categories: {
+            id: string;
+            store_id: string;
+            parent_id: string | null;
+            name: string;
+            slug: string;
+            sort_order: number;
+            is_active: boolean;
+            created_at: Date;
+        } | null;
     } & {
         id: string;
         store_id: string;
@@ -46,6 +46,8 @@ export declare class CatalogController {
         brand: string | null;
         unit_label: string | null;
         base_price_amount: Prisma.Decimal;
+        is_on_offer: boolean;
+        offer_price_amount: Prisma.Decimal | null;
         requires_age_verification: boolean;
         allows_notes: boolean;
         is_active: boolean;
@@ -63,16 +65,6 @@ export declare class CatalogController {
         created_at: Date;
     }[]>;
     findOne(id: string): Promise<{
-        catalog_categories: {
-            id: string;
-            store_id: string;
-            parent_id: string | null;
-            name: string;
-            slug: string;
-            sort_order: number;
-            is_active: boolean;
-            created_at: Date;
-        } | null;
         stores: {
             id: string;
             merchant_id: string;
@@ -91,6 +83,16 @@ export declare class CatalogController {
             created_at: Date;
             updated_at: Date;
         };
+        catalog_categories: {
+            id: string;
+            store_id: string;
+            parent_id: string | null;
+            name: string;
+            slug: string;
+            sort_order: number;
+            is_active: boolean;
+            created_at: Date;
+        } | null;
     } & {
         id: string;
         store_id: string;
@@ -105,6 +107,8 @@ export declare class CatalogController {
         brand: string | null;
         unit_label: string | null;
         base_price_amount: Prisma.Decimal;
+        is_on_offer: boolean;
+        offer_price_amount: Prisma.Decimal | null;
         requires_age_verification: boolean;
         allows_notes: boolean;
         is_active: boolean;
@@ -125,6 +129,8 @@ export declare class CatalogController {
         brand: string | null;
         unit_label: string | null;
         base_price_amount: Prisma.Decimal;
+        is_on_offer: boolean;
+        offer_price_amount: Prisma.Decimal | null;
         requires_age_verification: boolean;
         allows_notes: boolean;
         is_active: boolean;
@@ -145,6 +151,8 @@ export declare class CatalogController {
         brand: string | null;
         unit_label: string | null;
         base_price_amount: Prisma.Decimal;
+        is_on_offer: boolean;
+        offer_price_amount: Prisma.Decimal | null;
         requires_age_verification: boolean;
         allows_notes: boolean;
         is_active: boolean;

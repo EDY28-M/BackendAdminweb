@@ -2,7 +2,28 @@ import { UsersService } from './users.service';
 export declare class UsersController {
     private readonly usersService;
     constructor(usersService: UsersService);
-    findAll(): Promise<{
+    findAll(): Promise<({
+        user_roles: ({
+            roles: {
+                id: string;
+                code: string;
+                name: string;
+                description: string | null;
+                created_at: Date;
+            };
+        } & {
+            id: string;
+            user_id: string;
+            role_id: string;
+            scope_type: import(".prisma/client").$Enums.role_scope_type;
+            scope_id: string | null;
+            created_at: Date;
+        })[];
+        merchant_profiles: {
+            id: string;
+            business_name: string;
+        }[];
+    } & {
         id: string;
         phone_e164: string | null;
         email: string | null;
@@ -19,7 +40,7 @@ export declare class UsersController {
         created_at: Date;
         updated_at: Date;
         deleted_at: Date | null;
-    }[]>;
+    })[]>;
     findOne(id: string): Promise<{
         id: string;
         phone_e164: string | null;

@@ -32,6 +32,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('User account is not active');
     }
 
-    return user;
+    return { ...user, merchant_id: payload.merchant_id };
   }
 }

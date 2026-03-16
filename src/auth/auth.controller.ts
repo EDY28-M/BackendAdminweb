@@ -15,6 +15,12 @@ export class AuthController {
     return this.authService.loginAdmin(loginDto);
   }
 
+  @HttpCode(HttpStatus.OK)
+  @Post('merchant/login')
+  async loginMerchant(@Body() loginDto: LoginDto) {
+    return this.authService.loginMerchant(loginDto);
+  }
+
   // Example of a protected admin route
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('platform')

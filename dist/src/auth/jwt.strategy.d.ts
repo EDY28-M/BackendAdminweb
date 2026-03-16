@@ -9,6 +9,7 @@ export declare class JwtStrategy extends JwtStrategy_base {
     private prisma;
     constructor(configService: ConfigService, prisma: PrismaService);
     validate(payload: any): Promise<{
+        merchant_id: any;
         user_roles: ({
             roles: {
                 id: string;
@@ -25,7 +26,6 @@ export declare class JwtStrategy extends JwtStrategy_base {
             scope_id: string | null;
             created_at: Date;
         })[];
-    } & {
         id: string;
         phone_e164: string | null;
         email: string | null;

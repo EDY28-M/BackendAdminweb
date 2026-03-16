@@ -38,7 +38,7 @@ let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(pas
         if (user.status !== 'active') {
             throw new common_1.UnauthorizedException('User account is not active');
         }
-        return user;
+        return { ...user, merchant_id: payload.merchant_id };
     }
 };
 exports.JwtStrategy = JwtStrategy;

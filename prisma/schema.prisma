@@ -206,6 +206,8 @@ model catalog_items {
   brand                                                        String?                        @db.VarChar(120)
   unit_label                                                   String?                        @db.VarChar(30)
   base_price_amount                                            Decimal                        @db.Decimal(10, 2)
+  is_on_offer                                                 Boolean                        @default(false)
+  offer_price_amount                                          Decimal?                       @db.Decimal(10, 2)
   requires_age_verification                                    Boolean                        @default(false)
   allows_notes                                                 Boolean                        @default(true)
   is_active                                                    Boolean                        @default(true)
