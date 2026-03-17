@@ -2,6 +2,7 @@ import { PrismaService } from '../prisma/prisma.service';
 export declare class MerchantService {
     private prisma;
     constructor(prisma: PrismaService);
+    private syncBranchCatalogItems;
     updateOrderStatus(merchantId: string, orderId: string, newStatus: string): Promise<{
         id: string;
         order_code: string;

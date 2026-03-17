@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 export declare class CatalogService {
     private prisma;
     constructor(prisma: PrismaService);
+    private syncBranchCatalogItems;
     findAll(): Promise<({
         stores: {
             id: string;

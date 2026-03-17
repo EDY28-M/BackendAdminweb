@@ -17,6 +17,45 @@ let MerchantService = class MerchantService {
     constructor(prisma) {
         this.prisma = prisma;
     }
+    async syncBranchCatalogItems(storeId, catalogItemId, priceAmount, isActive) {
+        const branches = await this.prisma.store_branches.findMany({
+            where: { store_id: storeId, status: 'active' },
+            select: { id: true },
+        });
+        if (branches.length === 0)
+            return;
+        for (const branch of branches) {
+            const existing = await this.prisma.branch_catalog_items.findFirst({
+                where: {
+                    branch_id: branch.id,
+                    catalog_item_id: catalogItemId,
+                    variant_id: null,
+                },
+            });
+            if (existing) {
+                await this.prisma.branch_catalog_items.update({
+                    where: { id: existing.id },
+                    data: {
+                        price_amount: priceAmount,
+                        is_available: isActive,
+                    },
+                });
+            }
+            else {
+                await this.prisma.branch_catalog_items.create({
+                    data: {
+                        branch_id: branch.id,
+                        catalog_item_id: catalogItemId,
+                        variant_id: null,
+                        price_amount: priceAmount,
+                        is_available: isActive,
+                        availability_mode: 'manual',
+                        stock_qty: null,
+                    },
+                });
+            }
+        }
+    }
     async updateOrderStatus(merchantId, orderId, newStatus) {
         const order = await this.prisma.orders.findFirst({
             where: { id: orderId, stores: { merchant_id: merchantId } },
@@ -116,7 +155,7 @@ let MerchantService = class MerchantService {
             .replace(/[\s_]+/g, '-')
             .replace(/^-+|-+$/g, '')
             .substring(0, 200);
-        return this.prisma.catalog_items.create({
+        const item = await this.prisma.catalog_items.create({
             data: {
                 store_id: data.store_id,
                 category_id: data.category_id || null,
@@ -131,6 +170,8 @@ let MerchantService = class MerchantService {
                 offer_price_amount: data.offer_price_amount != null ? Number(data.offer_price_amount) : null,
             },
         });
+        await this.syncBranchCatalogItems(item.store_id, item.id, Number(item.base_price_amount), item.is_active);
+        return item;
     }
     async updateCatalogItem(merchantId, itemId, data) {
         const item = await this.prisma.catalog_items.findFirst({
@@ -159,10 +200,12 @@ let MerchantService = class MerchantService {
             updateData.is_on_offer = data.is_on_offer;
         if (data.offer_price_amount !== undefined)
             updateData.offer_price_amount = data.offer_price_amount != null ? Number(data.offer_price_amount) : null;
-        return this.prisma.catalog_items.update({
+        const updated = await this.prisma.catalog_items.update({
             where: { id: itemId },
             data: updateData,
         });
+        await this.syncBranchCatalogItems(updated.store_id, updated.id, Number(updated.base_price_amount), updated.is_active);
+        return updated;
     }
     async deleteCatalogItem(merchantId, itemId) {
         const item = await this.prisma.catalog_items.findFirst({
