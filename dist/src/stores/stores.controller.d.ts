@@ -73,6 +73,8 @@ export declare class StoresController {
         code: string;
         name: string;
         is_active: boolean;
+        logo_url: string | null;
+        bg_color: string | null;
         created_at: Date;
     }[]>;
     updateMerchant(id: string, data: any): Promise<({
@@ -182,7 +184,25 @@ export declare class StoresController {
         code: string;
         name: string;
         is_active: boolean;
+        logo_url: string | null;
+        bg_color: string | null;
         created_at: Date;
+    }>;
+    updateCategory(id: string, data: {
+        name: string;
+        logo_url?: string | null;
+        bg_color?: string | null;
+    }): Promise<{
+        id: string;
+        code: string;
+        name: string;
+        is_active: boolean;
+        logo_url: string | null;
+        bg_color: string | null;
+        created_at: Date;
+    }>;
+    deleteCategory(id: string): Promise<{
+        message: string;
     }>;
     createMerchant(data: any): Promise<{
         id: string;

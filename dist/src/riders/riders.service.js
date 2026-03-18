@@ -51,6 +51,29 @@ let RidersService = class RidersService {
     constructor(prisma) {
         this.prisma = prisma;
     }
+    async getActiveRiderByUserId(userId) {
+        const rider = await this.prisma.rider_profiles.findUnique({
+            where: { user_id: userId },
+            include: {
+                users: {
+                    select: {
+                        id: true,
+                        first_name: true,
+                        last_name: true,
+                        email: true,
+                        phone_e164: true,
+                    },
+                },
+            },
+        });
+        if (!rider) {
+            throw new common_1.ForbiddenException('No tienes perfil de repartidor');
+        }
+        if (rider.status !== 'active') {
+            throw new common_1.ForbiddenException('Tu cuenta de repartidor no está activa');
+        }
+        return rider;
+    }
     async findAll() {
         return this.prisma.rider_profiles.findMany({
             include: {
@@ -130,6 +153,253 @@ let RidersService = class RidersService {
         return this.prisma.rider_profiles.update({
             where: { id },
             data: { status: status },
+        });
+    }
+    async getAvailableOrders(userId) {
+        await this.getActiveRiderByUserId(userId);
+        return this.prisma.orders.findMany({
+            where: {
+                status: {
+                    in: ['created', 'pending_store_acceptance', 'accepted_by_store', 'preparing', 'ready_for_pickup'],
+                },
+                deliveries: {
+                    is: {
+                        status: 'pending_assignment',
+                        rider_profile_id: null,
+                    },
+                },
+            },
+            include: {
+                stores: { select: { name: true } },
+                store_branches: { select: { name: true } },
+                addresses: {
+                    select: {
+                        address_line1: true,
+                        reference: true,
+                        district: true,
+                        city: true,
+                    },
+                },
+                deliveries: {
+                    select: {
+                        status: true,
+                        estimated_minutes: true,
+                        distance_km: true,
+                    },
+                },
+            },
+            orderBy: { created_at: 'asc' },
+            take: 50,
+        });
+    }
+    async getMyActiveOrders(userId) {
+        const rider = await this.getActiveRiderByUserId(userId);
+        return this.prisma.orders.findMany({
+            where: {
+                deliveries: {
+                    is: { rider_profile_id: rider.id },
+                },
+                status: {
+                    in: ['rider_assigned', 'preparing', 'ready_for_pickup', 'picked_up', 'on_the_way'],
+                },
+            },
+            include: {
+                stores: { select: { name: true } },
+                store_branches: { select: { name: true } },
+                addresses: {
+                    select: {
+                        address_line1: true,
+                        reference: true,
+                        district: true,
+                        city: true,
+                    },
+                },
+                deliveries: {
+                    select: {
+                        status: true,
+                        estimated_minutes: true,
+                        distance_km: true,
+                        assigned_at: true,
+                        picked_up_at: true,
+                    },
+                },
+            },
+            orderBy: { created_at: 'desc' },
+            take: 50,
+        });
+    }
+    async acceptOrder(userId, orderId) {
+        const rider = await this.getActiveRiderByUserId(userId);
+        const order = await this.prisma.orders.findUnique({
+            where: { id: orderId },
+            include: { deliveries: true },
+        });
+        if (!order || !order.deliveries) {
+            throw new common_1.NotFoundException('Pedido no encontrado');
+        }
+        if (order.deliveries.rider_profile_id &&
+            order.deliveries.rider_profile_id !== rider.id) {
+            throw new common_1.ConflictException('Este pedido ya fue tomado por otro repartidor');
+        }
+        const now = new Date();
+        await this.prisma.$transaction([
+            this.prisma.deliveries.update({
+                where: { order_id: order.id },
+                data: {
+                    rider_profile_id: rider.id,
+                    status: 'assigned',
+                    assigned_at: now,
+                },
+            }),
+            this.prisma.orders.update({
+                where: { id: order.id },
+                data: {
+                    rider_user_id: rider.user_id,
+                    ...(order.status === 'created' && {
+                        status: 'rider_assigned',
+                        fulfillment_status: 'rider_assigned',
+                    }),
+                    rider_assigned_at: now,
+                },
+            }),
+            this.prisma.order_status_history.create({
+                data: {
+                    order_id: order.id,
+                    old_status: order.status,
+                    new_status: order.status === 'created' ? 'rider_assigned' : order.status,
+                    changed_by_user_id: userId,
+                    source: 'rider',
+                    notes: 'Pedido aceptado por repartidor',
+                },
+            }),
+            this.prisma.rider_profiles.update({
+                where: { id: rider.id },
+                data: { is_available: false, is_online: true },
+            }),
+        ]);
+        return this.prisma.orders.findUnique({
+            where: { id: order.id },
+            include: {
+                stores: { select: { name: true } },
+                store_branches: { select: { name: true } },
+                deliveries: true,
+            },
+        });
+    }
+    async rejectOrder(userId, orderId, reason) {
+        await this.getActiveRiderByUserId(userId);
+        const order = await this.prisma.orders.findUnique({
+            where: { id: orderId },
+            include: { deliveries: true },
+        });
+        if (!order || !order.deliveries) {
+            throw new common_1.NotFoundException('Pedido no encontrado');
+        }
+        if (order.status !== 'ready_for_pickup') {
+            throw new common_1.BadRequestException('El pedido ya no está disponible para rechazo');
+        }
+        if (order.deliveries.rider_profile_id) {
+            throw new common_1.ConflictException('Este pedido ya fue tomado por otro repartidor');
+        }
+        await this.prisma.order_status_history.create({
+            data: {
+                order_id: order.id,
+                old_status: order.status,
+                new_status: order.status,
+                changed_by_user_id: userId,
+                source: 'rider',
+                notes: reason?.trim()
+                    ? `Pedido rechazado por repartidor: ${reason.trim()}`
+                    : 'Pedido rechazado por repartidor',
+            },
+        });
+        return {
+            success: true,
+            order_id: order.id,
+            message: 'Pedido rechazado correctamente',
+        };
+    }
+    async updateMyOrderStatus(userId, orderId, status) {
+        const rider = await this.getActiveRiderByUserId(userId);
+        const order = await this.prisma.orders.findUnique({
+            where: { id: orderId },
+            include: { deliveries: true },
+        });
+        if (!order || !order.deliveries) {
+            throw new common_1.NotFoundException('Pedido no encontrado');
+        }
+        if (order.deliveries.rider_profile_id !== rider.id) {
+            throw new common_1.ForbiddenException('Este pedido no está asignado a tu cuenta');
+        }
+        const transitions = {
+            created: ['picked_up', 'on_the_way'],
+            rider_assigned: ['picked_up', 'on_the_way'],
+            preparing: ['picked_up', 'on_the_way'],
+            ready_for_pickup: ['picked_up', 'on_the_way'],
+            picked_up: ['on_the_way', 'delivered'],
+            on_the_way: ['delivered'],
+        };
+        const allowed = transitions[order.status] ?? [];
+        if (!allowed.includes(status)) {
+            throw new common_1.BadRequestException(`Transición inválida: no se puede pasar de ${order.status} a ${status}`);
+        }
+        const now = new Date();
+        const orderUpdate = {
+            status,
+            fulfillment_status: status,
+        };
+        const deliveryUpdate = {};
+        if (status === 'picked_up') {
+            orderUpdate.picked_up_at = now;
+            deliveryUpdate.status = 'picked_up';
+            deliveryUpdate.picked_up_at = now;
+        }
+        else if (status === 'on_the_way') {
+            deliveryUpdate.status = 'on_the_way';
+        }
+        else if (status === 'delivered') {
+            orderUpdate.delivered_at = now;
+            deliveryUpdate.status = 'delivered';
+            deliveryUpdate.delivered_at = now;
+        }
+        await this.prisma.$transaction([
+            this.prisma.orders.update({
+                where: { id: order.id },
+                data: orderUpdate,
+            }),
+            this.prisma.deliveries.update({
+                where: { order_id: order.id },
+                data: deliveryUpdate,
+            }),
+            this.prisma.order_status_history.create({
+                data: {
+                    order_id: order.id,
+                    old_status: order.status,
+                    new_status: status,
+                    changed_by_user_id: userId,
+                    source: 'rider',
+                    notes: `Estado actualizado por repartidor a ${status}`,
+                },
+            }),
+            ...(status === 'delivered'
+                ? [
+                    this.prisma.rider_profiles.update({
+                        where: { id: rider.id },
+                        data: {
+                            is_available: true,
+                            total_deliveries: { increment: 1 },
+                        },
+                    }),
+                ]
+                : []),
+        ]);
+        return this.prisma.orders.findUnique({
+            where: { id: order.id },
+            include: {
+                stores: { select: { name: true } },
+                store_branches: { select: { name: true } },
+                deliveries: true,
+            },
         });
     }
 };

@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Patch, Body, Post, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Patch, Body, Post, Delete, UseGuards } from '@nestjs/common';
 import { StoresService } from './stores.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Prisma } from '@prisma/client';
@@ -46,6 +46,16 @@ export class StoresController {
   @Post('categories')
   createCategory(@Body() data: Prisma.business_categoriesCreateInput) {
     return this.storesService.createCategory(data);
+  }
+
+  @Patch('categories/:id')
+  updateCategory(@Param('id') id: string, @Body() data: { name: string; logo_url?: string | null; bg_color?: string | null }) {
+    return this.storesService.updateCategory(id, data);
+  }
+
+  @Delete('categories/:id')
+  deleteCategory(@Param('id') id: string) {
+    return this.storesService.deleteCategory(id);
   }
 
   @Post('merchants')

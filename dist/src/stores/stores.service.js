@@ -51,6 +51,12 @@ let StoresService = class StoresService {
     constructor(prisma) {
         this.prisma = prisma;
     }
+    normalizeBgColor(value) {
+        const raw = (value ?? '').trim();
+        if (!raw)
+            return null;
+        return /^#[0-9A-Fa-f]{6}$/.test(raw) ? raw.toUpperCase() : null;
+    }
     async findAll() {
         return this.prisma.stores.findMany({
             include: {
@@ -71,10 +77,12 @@ let StoresService = class StoresService {
         });
     }
     async getCategories() {
-        return this.prisma.business_categories.findMany({
-            where: { is_active: true },
-            orderBy: { name: 'asc' }
-        });
+        return this.prisma.$queryRaw `
+      SELECT id, code, name, is_active, logo_url, bg_color, created_at
+      FROM business_categories
+      WHERE is_active = true
+      ORDER BY name ASC
+    `;
     }
     async findOne(id) {
         const store = await this.prisma.stores.findUnique({
@@ -130,13 +138,74 @@ let StoresService = class StoresService {
             .replace(/[^A-Z0-9\s]/g, '')
             .replace(/\s+/g, '_')
             .substring(0, 50);
-        return this.prisma.business_categories.create({
-            data: {
-                name: data.name,
-                code: code,
-                is_active: true
+        const bgColor = this.normalizeBgColor(data.bg_color);
+        try {
+            const rows = await this.prisma.$queryRaw `
+        INSERT INTO business_categories (name, code, is_active, logo_url, bg_color)
+        VALUES (${data.name}, ${code}, true, ${data.logo_url ?? null}, ${bgColor})
+        RETURNING id, code, name, is_active, logo_url, bg_color, created_at
+      `;
+            return rows[0];
+        }
+        catch (error) {
+            if (error?.code === '23505' || error?.code === 'P2002') {
+                throw new common_1.ConflictException('Ya existe una categoría con ese nombre.');
             }
+            throw error;
+        }
+    }
+    async updateCategory(id, data) {
+        const category = await this.prisma.business_categories.findUnique({ where: { id } });
+        if (!category) {
+            throw new common_1.NotFoundException('Categoría no encontrada');
+        }
+        const code = data.name
+            .toUpperCase()
+            .replace(/[^A-Z0-9\s]/g, '')
+            .replace(/\s+/g, '_')
+            .substring(0, 50);
+        const bgColor = this.normalizeBgColor(data.bg_color);
+        try {
+            const rows = await this.prisma.$queryRaw `
+        UPDATE business_categories
+        SET
+          name = ${data.name},
+          code = ${code},
+          logo_url = ${data.logo_url ?? null},
+          bg_color = ${bgColor}
+        WHERE id = ${id}::uuid
+        RETURNING id, code, name, is_active, logo_url, bg_color, created_at
+      `;
+            return rows[0];
+        }
+        catch (error) {
+            if (error?.code === '23505' || error?.code === 'P2002') {
+                throw new common_1.ConflictException('Ya existe una categoría con ese nombre.');
+            }
+            throw error;
+        }
+    }
+    async deleteCategory(id) {
+        const category = await this.prisma.business_categories.findUnique({ where: { id } });
+        if (!category) {
+            throw new common_1.NotFoundException('Categoría no encontrada');
+        }
+        if (!category.is_active) {
+            throw new common_1.BadRequestException('La categoría ya está eliminada');
+        }
+        const storesUsingCategory = await this.prisma.stores.count({
+            where: {
+                business_category_id: id,
+            },
         });
+        if (storesUsingCategory > 0) {
+            throw new common_1.ConflictException('No se puede eliminar la categoría porque está asignada a una o más tiendas.');
+        }
+        await this.prisma.business_categories.update({
+            where: { id },
+            data: { is_active: false },
+        });
+        return { message: 'Categoría eliminada correctamente' };
     }
     async createMerchant(data) {
         const { email, password, first_name, last_name, business_name, legal_name, tax_id, phone } = data;

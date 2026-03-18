@@ -46,6 +46,12 @@ let StoresController = class StoresController {
     createCategory(data) {
         return this.storesService.createCategory(data);
     }
+    updateCategory(id, data) {
+        return this.storesService.updateCategory(id, data);
+    }
+    deleteCategory(id) {
+        return this.storesService.deleteCategory(id);
+    }
     createMerchant(data) {
         return this.storesService.createMerchant(data);
     }
@@ -106,6 +112,21 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], StoresController.prototype, "createCategory", null);
+__decorate([
+    (0, common_1.Patch)('categories/:id'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], StoresController.prototype, "updateCategory", null);
+__decorate([
+    (0, common_1.Delete)('categories/:id'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], StoresController.prototype, "deleteCategory", null);
 __decorate([
     (0, common_1.Post)('merchants'),
     __param(0, (0, common_1.Body)()),

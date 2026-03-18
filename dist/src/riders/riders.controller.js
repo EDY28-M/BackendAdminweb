@@ -33,6 +33,21 @@ let RidersController = class RidersController {
     updateStatus(id, body) {
         return this.ridersService.updateStatus(id, body.status);
     }
+    getAvailableOrders(req) {
+        return this.ridersService.getAvailableOrders(req.user.id);
+    }
+    getMyActiveOrders(req) {
+        return this.ridersService.getMyActiveOrders(req.user.id);
+    }
+    acceptOrder(req, orderId) {
+        return this.ridersService.acceptOrder(req.user.id, orderId);
+    }
+    rejectOrder(req, orderId, body) {
+        return this.ridersService.rejectOrder(req.user.id, orderId, body?.reason);
+    }
+    updateMyOrderStatus(req, orderId, body) {
+        return this.ridersService.updateMyOrderStatus(req.user.id, orderId, body.status);
+    }
 };
 exports.RidersController = RidersController;
 __decorate([
@@ -63,6 +78,46 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", void 0)
 ], RidersController.prototype, "updateStatus", null);
+__decorate([
+    (0, common_1.Get)('me/orders/available'),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], RidersController.prototype, "getAvailableOrders", null);
+__decorate([
+    (0, common_1.Get)('me/orders/active'),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], RidersController.prototype, "getMyActiveOrders", null);
+__decorate([
+    (0, common_1.Post)('me/orders/:orderId/accept'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('orderId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], RidersController.prototype, "acceptOrder", null);
+__decorate([
+    (0, common_1.Post)('me/orders/:orderId/reject'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('orderId')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, Object]),
+    __metadata("design:returntype", void 0)
+], RidersController.prototype, "rejectOrder", null);
+__decorate([
+    (0, common_1.Post)('me/orders/:orderId/status'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('orderId')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, Object]),
+    __metadata("design:returntype", void 0)
+], RidersController.prototype, "updateMyOrderStatus", null);
 exports.RidersController = RidersController = __decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Controller)('riders'),

@@ -42,4 +42,14 @@ export declare class AuthService {
             }[];
         };
     }>;
+    loginRider(loginDto: LoginDto): Promise<{
+        access_token: string;
+        user: {
+            id: string;
+            email: string | null;
+            first_name: string;
+            last_name: string | null;
+            rider_profile_id: string;
+        };
+    }>;
 }

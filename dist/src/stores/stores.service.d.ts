@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 export declare class StoresService {
     private prisma;
     constructor(prisma: PrismaService);
+    private normalizeBgColor;
     findAll(): Promise<({
         merchant_profiles: {
             users: {
@@ -73,6 +74,8 @@ export declare class StoresService {
         code: string;
         name: string;
         is_active: boolean;
+        logo_url: string | null;
+        bg_color: string | null;
         created_at: Date;
     }[]>;
     findOne(id: string): Promise<{
@@ -162,7 +165,25 @@ export declare class StoresService {
         code: string;
         name: string;
         is_active: boolean;
+        logo_url: string | null;
+        bg_color: string | null;
         created_at: Date;
+    }>;
+    updateCategory(id: string, data: {
+        name: string;
+        logo_url?: string | null;
+        bg_color?: string | null;
+    }): Promise<{
+        id: string;
+        code: string;
+        name: string;
+        is_active: boolean;
+        logo_url: string | null;
+        bg_color: string | null;
+        created_at: Date;
+    }>;
+    deleteCategory(id: string): Promise<{
+        message: string;
     }>;
     createMerchant(data: any): Promise<{
         id: string;
